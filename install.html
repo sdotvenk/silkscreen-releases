@@ -70,6 +70,7 @@ h1 { font-size: clamp(40px, 5.6vw, 64px); }
 .btn small { font: 400 13px/1 var(--mono); opacity: .75; }
 .row.you .btn.main { background: var(--gold); color: var(--on-light); }
 .btn[aria-disabled="true"] { cursor: default; }
+.btn[aria-disabled="true"] { opacity: .55; }
 .extra { width: 100%; text-align: right; font-size: 14px; color: var(--muted); margin-top: -6px; }
 .extra a { color: var(--muted); text-underline-offset: 3px; }
 .soon { margin-top: 32px; text-align: center; color: var(--muted); font-size: 15px; }
@@ -77,7 +78,7 @@ h1 { font-size: clamp(40px, 5.6vw, 64px); }
 @media (max-width: 480px) { .notify { flex-direction: column; } }
 .notify input { flex: 1 1 auto; min-width: 0; font: 400 16px/1 var(--body); padding: 12px 14px; border-radius: 8px; border: 0; background: var(--field); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--copper); }
 .notify .btn { flex: none; justify-content: center; background: var(--gold); color: var(--on-light); border: 0; cursor: pointer; }
-@media (max-width: 560px) { .dl { justify-content: flex-start; } .extra { text-align: left; } }
+@media (max-width: 560px) { .row { flex-direction: column; align-items: flex-start; gap: 14px; padding: 18px 0; } .dl { justify-content: flex-start; } .extra { text-align: left; margin-top: 0; } .head { padding-block: 56px 32px; } }
 
 footer { padding-block: 32px 48px; color: var(--muted); font-size: 15px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 32px; justify-content: space-between; }
@@ -127,24 +128,27 @@ footer a:hover { color: var(--ink); }
 
   const ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent;
   const hash = location.hash.slice(1);
-  const you = BUILDS[hash] ? hash : /win/i.test(ua) ? "win" : /linux|x11|cros/i.test(ua) && !/android/i.test(navigator.userAgent) ? "linux" : "mac";
+  const mobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent) || (/mac/i.test(ua) && navigator.maxTouchPoints > 1);
+  const you = BUILDS[hash] ? hash : mobile ? "mac" : /win/i.test(ua) ? "win" : /linux|x11|cros/i.test(ua) && !/android/i.test(navigator.userAgent) ? "linux" : "mac";
 
   const order = [you, ...Object.keys(BUILDS).filter(k => k !== you)];
   let missing = false;
   const btn = (b, cls) => {
     if (!b.url) missing = true;
     const inner = `${esc(b.label)} <small>${esc(b.kind)}</small>`;
+    if (mobile) return `<span class="btn ${cls}" aria-disabled="true">${inner}</span>`;
     return b.url ? `<a class="btn ${cls}" href="${esc(b.url)}" download>${inner}</a>` : `<span class="btn ${cls}" aria-disabled="true">${inner}</span>`;
   };
   document.getElementById("list").innerHTML = order.map(k => {
     const o = BUILDS[k];
-    const extra = o.extra.map(b => b.url ? `<a href="${esc(b.url)}" download>${esc(b.label)} ${esc(b.kind)}</a>` : `${esc(b.label)} ${esc(b.kind)}`).join(" · ");
+    const extra = o.extra.map(b => b.url && !mobile ? `<a href="${esc(b.url)}" download>${esc(b.label)} ${esc(b.kind)}</a>` : `${esc(b.label)} ${esc(b.kind)}`).join(" · ");
     return `<div class="row${k === you ? " you" : ""}"><div class="os">${ICON[k]}<h2>${o.name}</h2></div>
       <div class="dl">${o.main.map((b, i) => btn(b, i === 0 ? "main" : "")).join("")}</div>
       ${extra ? `<div class="extra">Also: ${extra}</div>` : ""}</div>`;
   }).join("") + (!SIGNUP ? "" : `<p class="soon">Sign up for our mailing list for updates on silkscreen.</p>
     <form class="notify" id="notify"><input type="email" required placeholder="you@team.space" aria-label="Email"><button class="btn" type="submit">Sign up</button></form>`);
 
+  if (mobile && !BUILDS[hash]) { document.querySelectorAll(".row.you").forEach(r => r.classList.remove("you")); const m = document.createElement("p"); m.className = "sub"; m.textContent = "silkscreen is a desktop app. Open this page on your computer to download it."; document.getElementById("sub").after(m); }
   const sub = document.getElementById("sub");
   if (RELEASES.version || RELEASES.all) { sub.hidden = false; sub.innerHTML = [RELEASES.version && esc(RELEASES.version), RELEASES.all && `<a href="${esc(RELEASES.all)}">All releases on GitHub</a>`].filter(Boolean).join(" · "); }
 
