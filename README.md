@@ -28,4 +28,6 @@ This repository holds the website (served by GitHub Pages) and the release build
 
 ## Website
 
+The site is live at https://trysilkscreen.com (DNS at Namecheap, pointed at GitHub Pages; the `CNAME` file holds the domain, so keep it).
+
 `index.html` and `install.html` are static pages. To serve them, open **Settings → Pages** and set the source to **Deploy from a branch**, using `main` and `/ (root)`.
