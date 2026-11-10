@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="silkscreen is an AI bench partner for hardware integration.">
+<title>silkscreen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,500;112,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: white page, product shown on solder-mask green surfaces; one sticky bar, a live board in the hero, a hover menu that swaps a product preview. Single committed brand look. */
+:root {
+  --paper: #f6f6f1;
+  --ink: #14301f;
+  --muted: #56665b;
+  --gold: #c9a24a;
+  --copper: #2f5d3e;
+  --silk: #f4f1e8;
+  --trace: #79e3c3;
+  --warn: #efb56b;
+  --canvas: #0b120e;
+  --raised: #121b16;
+  --raised-2: #24332b;
+  --canvas-text: #d2ddd5;
+  --canvas-muted: #8b9a90;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --wrap: 1180px;
+  --on-light: #14301f;
+  --light: #f6f6f1;
+  --band: #14301f;
+  --line: #cfd3c7;
+  --alt: #e9eae2;
+  --chip: #e3e4dc;
+  --panel: #e9ece3;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #0f1612; --ink: #e6ece5; --muted: #9aa89f; --line: #2b3b32; --alt: #1d2822; --panel: #17211b; --band: #14301f; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #0f1612; --ink: #e6ece5; --muted: #9aa89f; --line: #2b3b32; --alt: #1d2822; --panel: #17211b; --band: #14301f; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; animation: none !important; } }
+body { background: var(--paper); color: var(--ink); font: 400 17px/1.6 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+em, i { font-style: normal; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--display); font-variation-settings: "wdth" 112; font-weight: 700; line-height: 1.08; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+.mono { font-family: var(--mono); }
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: var(--wrap); margin: 0 auto; }
+
+/* top bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--paper); transition: transform .3s ease; }
+.bar.away { transform: translateY(-100%); }
+.brand .mark { width: 30px; height: auto; display: block; }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 19px/1 var(--display); font-variation-settings: "wdth" 112; }
+.nav { display: flex; align-items: center; gap: 28px; font-size: 15px; }
+.nav a { text-decoration: none; color: var(--muted); transition: color .15s; }
+.nav a:hover { color: var(--ink); }
+.nav a.cta { color: var(--ink); font-weight: 600; }
+@media (max-width: 640px) { .nav a:not(.cta) { display: none; } }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; background: var(--gold); color: var(--on-light); font-weight: 600; font-size: 16px; padding: 13px 22px; border-radius: 8px; text-decoration: none; transition: transform .15s; }
+.btn:hover { transform: translateY(-1px); }
+.link { font-weight: 500; text-decoration: none; }
+.link:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* faint circuit motif, as on the app's Home: a dot grid behind the hero and a few copper traces in the margins */
+.hero::before { content: ""; position: absolute; inset: 0 0 auto; height: 560px; background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 24px 24px; opacity: .5; -webkit-mask-image: linear-gradient(to bottom, #000, transparent); mask-image: linear-gradient(to bottom, #000, transparent); pointer-events: none; z-index: -1; }
+.traced { position: relative; overflow: hidden; isolation: isolate; }
+.traced > .wrap { position: relative; }
+.motif { position: absolute; width: 480px; height: 110px; z-index: -1; pointer-events: none; }
+.motif path { fill: none; stroke: var(--line); stroke-width: 5; stroke-linejoin: round; opacity: .6; }
+.motif circle { fill: var(--paper); stroke: var(--gold); stroke-width: 4; }
+@media (max-width: 960px) { .section.traced { padding-bottom: 150px; } }
+.m-right { top: 4px; right: min(0px, calc(100vw - 500px)); }
+.m-left { bottom: 4px; left: min(0px, calc(100vw - 500px)); transform: scaleX(-1); }
+.m-low { bottom: 4px; right: min(0px, calc(100vw - 500px)); transform: scaleY(-1); }
+#access { padding-bottom: 150px; }
+
+/* hero */
+.hero { padding-block: 64px 32px; }
+.hero-c { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.works { list-style: none; margin: 0; padding: 0; display: flex; gap: 26px; align-items: center; }
+.works svg { width: 30px; height: 30px; display: block; }
+.shot { margin: 72px 0 0; background: var(--panel); border-radius: 24px; padding: clamp(16px, 4vw, 56px); overflow: hidden; }
+.shot img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.shot .for-dark { display: none; }
+:root[data-theme="dark"] .shot .for-light { display: none; }
+:root[data-theme="dark"] .shot .for-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot .for-light { display: none; }
+  :root:not([data-theme="light"]) .shot .for-dark { display: block; }
+}
+.pillars { margin-top: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+.pillars h3 { font-size: 24px; }
+.pillars p { margin-top: 10px; color: var(--muted); font-size: 17px; max-width: 36ch; }
+@media (max-width: 760px) { .pillars { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
+.works { color: var(--ink); }
+.beta { margin-left: 8px; font: 500 13px/1 var(--mono); color: var(--muted); }
+.theme { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
+.theme:hover { color: var(--ink); background: var(--alt); }
+.theme svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.theme .sun { display: none; }
+:root[data-theme="dark"] .theme .sun { display: block; }
+:root[data-theme="dark"] .theme .moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme .sun { display: block; }
+  :root:not([data-theme="light"]) .theme .moon { display: none; }
+}
+.dl-main svg { width: 20px; height: 20px; flex: none; }
+.hero h1 { margin-top: 18px; font-size: clamp(40px, 5.2vw, 70px); max-width: 17ch; }
+.hero .lede { margin-top: 24px; max-width: 56ch; font-size: 19px; color: var(--muted); }
+.actions { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.btn.big { font-size: 17px; padding: 16px 28px; }
+.btn.alt { background: var(--alt); color: var(--ink); font-size: 17px; padding: 16px 24px; }
+
+.canvas { margin-top: 48px; background: var(--canvas); border-radius: 14px; padding: 20px; overflow-x: auto; }
+.canvas > svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.nets { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; color: var(--muted); font-size: 15px; }
+.nets button { font-family: var(--mono); font-size: 14px; color: var(--muted); padding: 4px 0; }
+.nets button[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.dock { margin-top: 16px; background: var(--raised); border-radius: 10px; padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 8px; color: var(--canvas-text); min-width: 0; }
+.dock .hop { display: flex; flex-direction: column; line-height: 1.25; padding: 6px 10px; border-radius: 7px; white-space: nowrap; }
+.dock .hop.first { background: var(--raised-2); }
+.dock .hop small { font: 400 12px/1.3 var(--body); color: var(--canvas-muted); }
+.dock .hop b { font: 500 15px/1.3 var(--mono); }
+.dock svg { width: 40px; height: 14px; flex: none; }
+.note { margin-top: 12px; font-size: 16px; color: var(--muted); max-width: 70ch; min-height: 3.2em; }
+.note strong { color: var(--ink); font-weight: 600; }
+
+/* menu section */
+.section { padding-block: 112px; }
+.section h2 { font-size: clamp(34px, 4.6vw, 56px); max-width: 18ch; }
+.flow { margin-top: 56px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: start; }
+.items { display: flex; flex-direction: column; gap: 6px; }
+.item { text-align: left; width: 100%; padding: 14px 0; }
+.item .t { display: block; font: 700 clamp(30px, 3.6vw, 46px)/1.1 var(--display); font-variation-settings: "wdth" 112; color: var(--muted); transition: color .2s; }
+.item .d { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; color: var(--muted); font-size: 17px; max-width: 44ch; }
+.item .d > span { overflow: hidden; }
+.item.on .t, .item:hover .t { color: var(--ink); }
+.item.on .d { grid-template-rows: 1fr; }
+.item.on .d > span { padding-top: 10px; }
+.stage { position: sticky; top: 96px; background: var(--canvas); color: var(--canvas-text); border-radius: 14px; padding: 28px; min-height: 440px; min-width: 0; }
+.pane { animation: in .35s ease; }
+@keyframes in { from { transform: translateY(6px); } to { transform: none; } }
+@media (max-width: 860px) {
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .stage { position: static; min-height: 0; margin: 4px 0 18px; padding: 20px; }
+}
+
+/* shared preview pieces */
+.pv-h { font: 500 14px/1.4 var(--mono); color: var(--trace); margin-bottom: 18px; }
+.ask { display: flex; align-items: center; gap: 10px; background: var(--light); color: var(--muted); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; }
+.ask .chip { font: 500 13px/1 var(--mono); background: var(--chip); color: var(--on-light); padding: 5px 8px; border-radius: 5px; }
+.sugg { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.sugg button { font-size: 13.5px; padding: 6px 10px; border-radius: 7px; background: var(--raised-2); color: var(--canvas-text); }
+.sugg button[aria-pressed="true"] { background: var(--silk); color: var(--on-light); }
+.conv { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; font-size: 15px; }
+.conv .msg .mono { font-size: 13.5px; color: var(--trace); }
+.rows { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 10px 14px; background: var(--raised); border-radius: 6px; }
+.row .k { font-family: var(--mono); overflow-wrap: anywhere; }
+.row .v { color: var(--canvas-muted); white-space: nowrap; }
+.sbtn { background: var(--gold); color: var(--on-light); font-weight: 600; font-size: 15px; padding: 10px 16px; border-radius: 7px; }
+.qbtn { background: var(--raised-2); color: var(--canvas-text); font-size: 15px; padding: 10px 14px; border-radius: 7px; }
+.qbtn kbd, .rv kbd { font: 500 12px/1 var(--mono); background: var(--canvas); color: var(--canvas-muted); padding: 3px 6px; border-radius: 4px; margin-left: 6px; }
+.qbtn:hover { background: var(--silk); color: var(--on-light); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.out { margin-top: 18px; font-size: 15px; color: var(--canvas-text); min-height: 1.6em; }
+
+.composer { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; background: var(--light); color: #56665b; border-radius: 12px; padding: 14px 14px 12px; min-height: 84px; font-size: 15px; }
+.composer .send { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: var(--gold); color: var(--on-light); font-weight: 600; flex: none; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-top: 16px; }
+.stats div { background: var(--raised); border-radius: 6px; padding: 12px 14px; }
+.stats b { display: block; font: 500 26px/1.1 var(--body); font-variant-numeric: tabular-nums; color: var(--silk); }
+.stats div:last-child b { color: var(--warn); }
+.stats span { font-size: 13px; color: var(--canvas-muted); }
+#files { margin-top: 16px; }
+#files:empty { display: none; }
+@media (max-width: 520px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.iso { display: block; width: 100%; height: auto; }
+.netpick { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0 4px; }
+.netpick button { font: 400 14px/1.4 var(--mono); color: var(--canvas-muted); padding: 4px 0; }
+.netpick button[aria-pressed="true"] { color: var(--trace); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.code { margin: 12px 0 0; background: var(--raised); color: var(--canvas-text); border-radius: 8px; padding: 14px 16px; font: 400 13px/1.6 var(--mono); overflow-x: auto; white-space: pre; }
+
+.rv { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 16px; }
+.rv:focus-visible { outline: none; }
+.rv-list { display: flex; flex-direction: column; gap: 2px; }
+.rv-list button { text-align: left; padding: 7px 10px; border-radius: 6px; font-size: 13.5px; display: flex; gap: 8px; align-items: baseline; color: var(--canvas-text); }
+.rv-list button.on { background: var(--raised-2); }
+.rv-list .tri { color: #e69191; font-size: 11px; }
+.rv-list .done .tri { color: var(--trace); }
+.rv-list .mono { font-weight: 500; white-space: nowrap; }
+.rv-list .sub, .rv-detail .sub, .proposal .sub { color: var(--canvas-muted); font-size: 13px; }
+.rv-detail { background: var(--raised); border-radius: 8px; padding: 14px; min-width: 0; }
+.rv-detail h4 { margin: 0 0 12px; font: 600 15px/1.35 var(--body); color: var(--silk); }
+.rv-detail .vs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.rv-detail .lab { font-size: 13px; color: var(--canvas-muted); margin-bottom: 8px; }
+.rv-detail .lab .mono { color: var(--canvas-text); }
+.rv-detail .big { font-size: 20px; color: var(--silk); }
+.rv-detail .out { margin-top: 12px; color: var(--trace); }
+.sheet { margin-top: 14px; border-collapse: separate; border-spacing: 2px; font: 400 12.5px/1.3 var(--mono); width: 100%; }
+.sheet th { text-align: left; color: var(--canvas-muted); font-weight: 400; padding: 3px 6px; }
+.sheet td { background: var(--raised-2); padding: 4px 6px; border-radius: 3px; white-space: nowrap; }
+.sheet tr.hot td { background: var(--warn); color: var(--on-light); }
+@media (max-width: 620px) { .rv, .rv-detail .vs { grid-template-columns: minmax(0, 1fr); } }
+
+.check { font: 600 clamp(26px, 3.4vw, 40px)/1.15 var(--display); font-variation-settings: "wdth" 112; color: var(--silk); }
+.expect { margin-top: 8px; font-size: 16px; }
+.entry { margin-top: 22px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.entry input { width: 9ch; font: 500 28px/1 var(--mono); background: var(--light); color: var(--on-light); border: 0; border-radius: 7px; padding: 10px 12px; }
+.entry label { font-family: var(--mono); font-size: 22px; }
+.keys { font-size: 14px; color: var(--canvas-muted); }
+.hist { margin-top: 22px; }
+
+/* hero traces, as on the app's Home: copper traces leave the gold pad after the headline and run off the right edge; a short mint segment rides the trace nearest the pointer */
+.hero { position: relative; overflow: hidden; isolation: isolate; }
+.hero > .wrap { position: relative; z-index: 1; }
+@media (max-width: 820px) { .traces { display: none; } }
+.traces { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.traces path { fill: none; stroke: var(--line); stroke-width: 5; stroke-linejoin: round; opacity: .6; }
+.traces circle { fill: var(--paper); stroke: var(--gold); stroke-width: 4; }
+.traces path.glow { stroke: var(--trace); stroke-dasharray: 34 6000; stroke-linecap: round; opacity: .85; transition: stroke-dashoffset .18s ease-out, opacity .18s; }
+.traces.auto path.glow { transition: none; }
+
+/* sources */
+.intro { margin-top: 22px; font-size: 19px; color: var(--muted); max-width: 60ch; }
+.sources { margin-top: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+.sources h3 { font-size: 20px; color: var(--muted); }
+.sources ul { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font: 700 clamp(22px, 2.4vw, 30px)/1.25 var(--display); font-variation-settings: "wdth" 112; }
+@media (max-width: 760px) { .sources { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+
+/* tiers */
+.legend { margin-top: 56px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px 40px; }
+.legend svg { width: 100%; max-width: 220px; height: 28px; display: block; }
+.legend h3 { margin-top: 14px; font-size: 22px; }
+.legend p { margin-top: 6px; color: var(--muted); font-size: 16px; max-width: 32ch; }
+@media (max-width: 760px) { .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .legend { grid-template-columns: minmax(0, 1fr); } }
+
+/* agent band */
+.dark { background: var(--band); color: var(--silk); }
+.dark .muted { color: var(--silk); }
+.agent { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 64px; align-items: start; }
+.agent .copy p { margin-top: 22px; font-size: 18px; max-width: 46ch; }
+.chat { display: flex; flex-direction: column; gap: 14px; font-size: 16px; }
+.msg { max-width: 92%; }
+.msg.me { align-self: flex-end; background: var(--silk); color: var(--on-light); padding: 12px 16px; border-radius: 12px; }
+.msg .mono { font-size: 14.5px; color: var(--trace); }
+.tools { font: 400 14px/1.4 var(--mono); color: var(--silk); padding-left: 4px; }
+.proposal { padding: 16px 18px; border-radius: 10px; background: var(--light); color: var(--on-light); }
+.proposal .btns { margin-top: 14px; }
+.proposal .qbtn { background: var(--on-light); color: var(--silk); }
+.proposal .sub { color: #56665b; font-size: 15px; }
+.mode { align-self: flex-end; display: flex; gap: 2px; background: rgba(0, 0, 0, .25); border-radius: 8px; padding: 3px; }
+.mode button { font-size: 13px; padding: 6px 10px; border-radius: 6px; color: var(--silk); }
+.mode button[aria-pressed="true"] { background: var(--silk); color: var(--on-light); }
+@media (max-width: 860px) { .agent { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
+
+/* fit */
+.fit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px; margin-top: 56px; }
+.fit h3 { font-size: 20px; }
+.fit p { margin-top: 8px; color: var(--muted); font-size: 16px; }
+.fit .us h3 { color: var(--ink); }
+.fit .us { background: var(--gold); border-radius: 12px; padding: 20px; margin: -20px; }
+.fit .us p { color: var(--ink); }
+@media (max-width: 860px) { .fit { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fit .us { margin: 0; } }
+@media (max-width: 460px) { .fit { grid-template-columns: minmax(0, 1fr); } .fit .us { margin: 0; } }
+
+/* closing call to action */
+.closing { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.closing h2 { max-width: 16ch; }
+.closing p { margin-top: 22px; font-size: 18px; color: var(--muted); max-width: 54ch; }
+.flinks { display: flex; gap: 24px; }
+.flinks a { text-decoration: none; }
+.flinks a:hover { color: var(--ink); }
+/* access */
+.access { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 64px; align-items: end; }
+.access p { margin-top: 22px; font-size: 18px; color: var(--muted); max-width: 50ch; }
+form { display: flex; flex-wrap: wrap; gap: 10px; }
+form input { flex: 1 1 220px; min-width: 0; font: 400 17px/1 var(--body); padding: 14px 16px; border-radius: 8px; border: 0; background: var(--silk); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--copper); }
+form .btn { border: 0; cursor: pointer; }
+.fine { margin-top: 12px; font-size: 14px; color: var(--muted); }
+@media (max-width: 860px) { .access { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+
+footer { padding-block: 40px 56px; color: var(--muted); font-size: 15px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; }
+</style>
+
+</head>
+<body>
+<header class="bar band" id="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="silkscreen home">
+      <svg class="mark" viewBox="40 92 432 328" aria-hidden="true"><g stroke="#3a8a5a" stroke-width="14" stroke-linejoin="round" fill="none"><path d="M176 192 L128 192 L88 116"/><path d="M336 192 L384 192 L424 116"/><path d="M176 234 L108 234 L64 194"/><path d="M336 234 L404 234 L448 194"/><path d="M176 278 L108 278 L64 318"/><path d="M336 278 L404 278 L448 318"/><path d="M176 320 L128 320 L88 396"/><path d="M336 320 L384 320 L424 396"/></g><g fill="var(--paper)" stroke="var(--gold)" stroke-width="12"><circle cx="88" cy="116" r="17"/><circle cx="424" cy="116" r="17"/><circle cx="64" cy="194" r="17"/><circle cx="448" cy="194" r="17"/><circle cx="64" cy="318" r="17"/><circle cx="448" cy="318" r="17"/><circle cx="88" cy="396" r="17"/><circle cx="424" cy="396" r="17"/></g><rect x="176" y="176" width="160" height="160" rx="14" fill="var(--paper)" stroke="var(--ink)" stroke-width="17"/><circle cx="208" cy="208" r="13" fill="var(--ink)"/><path d="M234 244 L258 266 L234 288" fill="none" stroke="var(--ink)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><rect x="268" y="279" width="32" height="12" rx="2" fill="var(--gold)"/></svg>silkscreen<span class="beta">beta</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#agents">Agents</a>
+      <a class="cta" href="install.html">Download</a>
+      <button class="theme" id="theme" type="button" aria-label="Switch to dark mode"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero band">
+    <svg class="traces" id="traces" aria-hidden="true"></svg>
+    <div class="wrap">
+      <div class="hero-c">
+        <ul class="works" aria-label="Works with Claude Code, Codex and Antigravity"><li title="Claude Code"><svg aria-hidden="true" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z" fill="#D97757" fill-rule="nonzero"></path></svg></li><li title="Codex"><svg aria-hidden="true" fill="currentColor" fill-rule="evenodd" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"></path></svg></li><li title="Antigravity"><svg aria-hidden="true" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><mask height="23" id="lobe-icons-antigravity-0-_R_0_" maskUnits="userSpaceOnUse" width="24" x="0" y="1"><path d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z" fill="#fff"></path></mask><g mask="url(#lobe-icons-antigravity-0-_R_0_)"><g filter="url(#lobe-icons-antigravity-1-_R_0_)"><path d="M-1.018-3.992c-.408 3.591 2.686 6.89 6.91 7.37 4.225.48 7.98-2.043 8.387-5.633.408-3.59-2.686-6.89-6.91-7.37-4.225-.479-7.98 2.043-8.387 5.633z" fill="#FFE432"></path></g><g filter="url(#lobe-icons-antigravity-2-_R_0_)"><path d="M15.269 7.747c1.058 4.557 5.691 7.374 10.348 6.293 4.657-1.082 7.575-5.653 6.516-10.21-1.058-4.556-5.691-7.374-10.348-6.292-4.657 1.082-7.575 5.653-6.516 10.21z" fill="#FC413D"></path></g><g filter="url(#lobe-icons-antigravity-3-_R_0_)"><path d="M-12.443 10.804c1.338 4.703 7.36 7.11 13.453 5.378 6.092-1.733 9.947-6.95 8.61-11.652C8.282-.173 2.26-2.58-3.833-.848-9.925.884-13.78 6.1-12.443 10.804z" fill="#00B95C"></path></g><g filter="url(#lobe-icons-antigravity-4-_R_0_)"><path d="M-12.443 10.804c1.338 4.703 7.36 7.11 13.453 5.378 6.092-1.733 9.947-6.95 8.61-11.652C8.282-.173 2.26-2.58-3.833-.848-9.925.884-13.78 6.1-12.443 10.804z" fill="#00B95C"></path></g><g filter="url(#lobe-icons-antigravity-5-_R_0_)"><path d="M-7.608 14.703c3.352 3.424 9.126 3.208 12.896-.483 3.77-3.69 4.108-9.459.756-12.883C2.69-2.087-3.083-1.871-6.853 1.82c-3.77 3.69-4.108 9.458-.755 12.883z" fill="#00B95C"></path></g><g filter="url(#lobe-icons-antigravity-6-_R_0_)"><path d="M9.932 27.617c1.04 4.482 5.384 7.303 9.7 6.3 4.316-1.002 6.971-5.448 5.93-9.93-1.04-4.483-5.384-7.304-9.7-6.301-4.316 1.002-6.971 5.448-5.93 9.93z" fill="#3186FF"></path></g><g filter="url(#lobe-icons-antigravity-7-_R_0_)"><path d="M2.572-8.185C.392-3.329 2.778 2.472 7.9 4.771c5.122 2.3 11.042.227 13.222-4.63 2.18-4.855-.205-10.656-5.327-12.955-5.122-2.3-11.042-.227-13.222 4.63z" fill="#FBBC04"></path></g><g filter="url(#lobe-icons-antigravity-8-_R_0_)"><path d="M-3.267 38.686c-5.277-2.072 3.742-19.117 5.984-24.83 2.243-5.712 8.34-8.664 13.616-6.592 5.278 2.071 11.533 13.482 9.29 19.195-2.242 5.713-23.613 14.298-28.89 12.227z" fill="#3186FF"></path></g><g filter="url(#lobe-icons-antigravity-9-_R_0_)"><path d="M28.71 17.471c-1.413 1.649-5.1.808-8.236-1.878-3.135-2.687-4.531-6.201-3.118-7.85 1.412-1.649 5.1-.808 8.235 1.878s4.532 6.2 3.119 7.85z" fill="#749BFF"></path></g><g filter="url(#lobe-icons-antigravity-10-_R_0_)"><path d="M18.163 9.077c5.81 3.93 12.502 4.19 14.946.577 2.443-3.612-.287-9.727-6.098-13.658-5.81-3.931-12.502-4.19-14.946-.577-2.443 3.612.287 9.727 6.098 13.658z" fill="#FC413D"></path></g><g filter="url(#lobe-icons-antigravity-11-_R_0_)"><path d="M-.915 2.684c-1.44 3.473-.97 6.967 1.05 7.804 2.02.837 4.824-1.3 6.264-4.772 1.44-3.473.97-6.967-1.05-7.804-2.02-.837-4.824 1.3-6.264 4.772z" fill="#FFEE48"></path></g></g><defs><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="17.587" id="lobe-icons-antigravity-1-_R_0_" width="19.838" x="-3.288" y="-11.917"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="1.117"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="38.565" id="lobe-icons-antigravity-2-_R_0_" width="38.9" x="4.251" y="-13.493"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="5.4"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="36.517" id="lobe-icons-antigravity-3-_R_0_" width="40.955" x="-21.889" y="-10.592"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="4.591"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="36.517" id="lobe-icons-antigravity-4-_R_0_" width="40.955" x="-21.889" y="-10.592"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="4.591"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="36.595" id="lobe-icons-antigravity-5-_R_0_" width="36.632" x="-19.099" y="-10.278"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="4.591"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="34.087" id="lobe-icons-antigravity-6-_R_0_" width="33.533" x=".981" y="8.758"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="4.363"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="35.276" id="lobe-icons-antigravity-7-_R_0_" width="35.978" x="-6.143" y="-21.659"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="3.954"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="46.523" id="lobe-icons-antigravity-8-_R_0_" width="45.114" x="-11.96" y="-.46"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="3.531"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="24.054" id="lobe-icons-antigravity-9-_R_0_" width="25.094" x="10.485" y=".58"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="3.159"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="30.007" id="lobe-icons-antigravity-10-_R_0_" width="33.508" x="5.833" y="-12.467"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="2.669"></feGaussianBlur></filter><filter color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" height="26.151" id="lobe-icons-antigravity-11-_R_0_" width="22.194" x="-8.355" y="-8.876"><feFlood flood-opacity="0" result="BackgroundImageFix"></feFlood><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"></feBlend><feGaussianBlur result="effect1_foregroundBlur_977_115" stdDeviation="3.303"></feGaussianBlur></filter></defs></svg></li></ul>
+        <h1>Your AI bench partner for hardware integration.</h1>
+        <p class="lede">silkscreen turns your ECAD files, Gerbers and pinout documents into one assembly record, then works with your AI harness of choice to resolve conflicts before integration, guide checks at the bench, and answer any question you have, down to every pin and wire.</p>
+        <div class="actions" id="dlrow">
+          <a class="btn big dl-main" href="install.html#mac">Download for macOS</a>
+        </div>
+      </div>
+
+      <figure class="shot">
+        <img class="for-light" src="img/app-light.webp" width="2400" height="1342" alt="The silkscreen desktop app: an assembly of four boards with a pin traced across them, the DAQ pinout on the left and a Codex chat proposing bench checks on the right.">
+        <img class="for-dark" src="img/app-dark.webp" width="2400" height="1342" alt="" aria-hidden="true">
+      </figure>
+    </div>
+  </section>
+
+  <section class="section band" id="free">
+    <div class="wrap">
+      <h2>Free, offline and yours.</h2>
+      <div class="pillars">
+        <div><h3>No account</h3><p>Download it, open a project, start working. There's nothing to sign up for.</p></div>
+        <div><h3>No subscription</h3><p>silkscreen is free for personal use. Your agent runs on the plan or API access you already have.</p></div>
+        <div><h3>Fully offline</h3><p>The app, your projects and your design files stay on your machine. The only network traffic is what your own harness sends to its model.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="trace" style="padding-top:24px">
+    <div class="wrap">
+      <h2>Trace any net across the assembly.</h2>
+
+      <div class="canvas" aria-label="Interactive example: three boards and a harness">
+        <svg id="board" viewBox="0 0 1000 440" role="img" aria-label="EPS and OBC boards stacked, with harness W1 to the DAQ board"></svg>
+        <div class="dock" id="strip" aria-live="polite"></div>
+      </div>
+      <div class="nets" id="nets"><span>Hover a pin, or pick a net:</span></div>
+      <p class="note" id="note"></p>
+    </div>
+  </section>
+
+  <section class="section band traced" id="sources" style="padding-bottom:0">
+    <svg class="motif m-right" viewBox="0 0 480 110" width="480" height="110" aria-hidden="true"><path d="M80 22 H250 L290 62 H480"/><path d="M170 96 H480"/><circle cx="80" cy="22" r="7"/><circle cx="170" cy="96" r="7"/></svg>
+    <div class="wrap">
+      <h2>Start from whatever you have.</h2>
+      <p class="intro">Hand over a whole delivered folder and silkscreen sorts boards from documents by what's inside them. Design files when you have them, documents when you don't, and the bench when nothing else agrees, all in one wiring record that keeps track of which source said what.</p>
+      <div class="sources">
+        <div><h3>Design files</h3><ul><li>KiCad 5 and later</li><li>Gerber ZIPs and Excellon drill</li><li>EAGLE</li><li>IPC-D-356 netlists</li></ul></div>
+        <div><h3>Documents</h3><ul><li>ICD and pinout spreadsheets</li><li>Wire lists</li><li>Schematic PDFs</li><li>Datasheets</li><li>Project bundles</li></ul></div>
+        <div><h3>Bench</h3><ul><li>Continuity checks</li><li>Isolation checks</li><li>Meter readings</li><li>Anomaly log</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" id="how">
+    <div class="wrap">
+      <h2>One wiring record, from the first file to the bench.</h2>
+      <div class="flow">
+        <div class="items" id="items">
+          <button class="item on" data-k="import"><span class="t">Import</span><span class="d"><span>Hand over a delivered folder, drop KiCad boards or Gerber ZIPs, or describe the project on Home and let your agent build it. Boards, ICDs, wire lists and schematics land in one project, each kept as the original file.</span></span></button>
+          <button class="item" data-k="assembly"><span class="t">Assembly</span><span class="d"><span>See the stack and the harnesses together, orbit around them and move boards into place. Find any pin, net or file with ⌘K and trace it across every board it reaches. Each hop shows whether copper, a document or a reading backs it.</span></span></button>
+          <button class="item" data-k="explore"><span class="t">Explore</span><span class="d"><span>Select any pin, net or board and ask your harness about it. It traces the path, reads the ICDs, schematics and datasheets, and answers with the rows and pins it used.</span></span></button>
+          <button class="item" data-k="review"><span class="t">Review</span><span class="d"><span>Every place two sources disagree becomes a review item, with the wire list row next to the board it contradicts. Decide with one key, undo with Z, and the decision is kept with the pin.</span></span></button>
+          <button class="item" data-k="bench"><span class="t">Bench</span><span class="d"><span>Continuity and isolation checks come from the expected wiring. Type the reading, press Enter, move to the next one. Your readings become measured evidence, and a reading that disagrees opens an anomaly you close with a disposition.</span></span></button>
+          <button class="item" data-k="export"><span class="t">Hand off</span><span class="d"><span>Export a wire list, IPC-D-356, SysML v2, the bench check report, the anomaly log or an as-built record, each with a manifest of the evidence behind it. Or send a project bundle a teammate opens as is.</span></span></button>
+        </div>
+        <div class="stage" id="stage"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band" style="padding-top:0">
+    <div class="wrap">
+      <h2>Every line says how we know it.</h2>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section class="section band dark" id="agents">
+    <div class="wrap agent">
+      <div class="copy">
+        <h2>Bring your own agent.</h2>
+        <p>Claude Code, Codex or Antigravity drive silkscreen through the same operations as the interface. They trace signals, read the ICDs and schematics, plan bench checks and explain what a conflict does electrically.</p>
+        <p>Each chat runs in Proposals only, where every change waits for you, or Auto mode, where changes apply at once and are logged in Activity. Web lookups for datasheets stay off until you allow them.</p>
+        <p>You bring your own deployment. silkscreen drives the harness CLI you already have installed, signed in however you like: a Claude or ChatGPT subscription, API keys, or your company's own access. silkscreen never sees your credentials, and design files never leave your machine.</p>
+      </div>
+      <div class="chat">
+        <div class="msg me">This bench's DAQ won't power up. Find every interface problem and cite the exact rows and pins.</div>
+        <div class="tools">▸ 6 tool calls: review.conflicts, trace, files.read</div>
+        <div class="msg">Two problems. Harness W1 crosses <span class="mono">DAQ J1.1</span> with <span class="mono">J1.3</span> and <span class="mono">J1.2</span> with <span class="mono">J1.4</span> against <span class="mono">harness-w1-rev-a.csv</span> rows 2 to 5. Tracing <span class="mono">SW_3V3</span> from <span class="mono">EPS U2.4</span> reaches ground on all four boards, so the switched rail is shorted and the DAQ can't power up.<br><br>The OBC ICD is also stale. <span class="mono">Pinout!C19</span> and <span class="mono">C20</span> swap <span class="mono">J3.7</span> and <span class="mono">J3.8</span>, and the schematic agrees with copper.</div>
+        <div class="proposal" id="proposal">
+          <div><strong>Rewire W1-01 to W1-04 to match the wire list</strong></div>
+          <div class="sub">4 wires · 4 conflicts resolved · 4 checks to run at the bench</div>
+          <div class="btns"><button class="sbtn" data-a="accept">Accept</button><button class="qbtn" data-a="reject">Reject</button></div>
+        </div>
+        <div class="mode" role="group" aria-label="Agent mode"><button aria-pressed="true" data-m="prop">Proposals only</button><button aria-pressed="false" data-m="auto">Auto mode</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band traced" id="access">
+    <svg class="motif m-low" viewBox="0 0 480 110" width="480" height="110" aria-hidden="true"><path d="M80 22 H250 L290 62 H480"/><path d="M170 96 H480"/><circle cx="80" cy="22" r="7"/><circle cx="170" cy="96" r="7"/></svg>
+    <div class="wrap closing">
+      <h2>You deserve better than spreadsheets.</h2>
+      <div class="actions">
+        <a class="btn big dl-main" href="install.html#mac">Download for macOS</a>
+        <a class="btn alt" href="install.html">Other platforms</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="band">
+  <div class="wrap">
+    <span>© 2026 silkscreen</span>
+    <nav class="flinks" aria-label="Footer"><a href="install.html">Download</a><a href="#how">How it works</a><a href="#agents">Agents</a><a href="https://github.com/sdotvenk/silkscreen-releases/releases">GitHub</a></nav>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const C = { board: "#14301f", edge: "#2f5d3e", silk: "#f4f1e8", pad: "#c9a24a", hl: "#79e3c3", warn: "#efb56b", muted: "#8b9a90", text: "#d2ddd5" };
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const TIER = {
+    ext: { w: 3, dash: null, name: "Extracted" },
+    dec: { w: 3, dash: "9 6", name: "Declared" },
+    inf: { w: 3.5, dash: "0.5 7", name: "Inferred" },
+    meas: { w: 6.5, dash: null, name: "Measured" },
+    unk: { w: 0, dash: null, name: "Unknown" }
+  };
+  const harness = (y1, y2) => `M602 ${y1} C 690 ${y1} 680 ${y2} 768 ${y2}`;
+  const line = pts => "M" + pts.map(p => p.join(" ")).join(" L");
+
+  const NETS = {
+    "+5V_OBC": { segs: [["ext", line([[190,175],[262,175]])], ["meas", line([[262,175],[378,175]])], ["ext", line([[378,175],[450,175]])]],
+      hops: [["EPS","U2.4","ext"],["EPS","J1.2","meas"],["OBC","J2.2","ext"],["OBC","U1.9"]],
+      note: "<strong>Measured.</strong> 0.2 Ω across the stack on Oct 30. Copper on both boards agrees with the EPS ICD." },
+    "+3V3_OBC": { segs: [["ext", line([[190,220],[262,220]])], ["inf", line([[262,220],[378,220]])], ["ext", line([[378,220],[450,220]])]],
+      hops: [["EPS","U2.7","ext"],["EPS","J1.3","inf"],["OBC","J2.3","ext"],["OBC","U1.10"]],
+      note: "<strong>Inferred mating.</strong> The stack order says EPS J1 meets OBC J2, but no one has measured it yet. silkscreen adds a continuity check to the bench list." },
+    "EPS_EN": { segs: [["ext", line([[190,265],[262,265]])], ["inf", line([[262,265],[378,265]])], ["ext", line([[378,265],[450,265]])]],
+      hops: [["EPS","U2.9","ext"],["EPS","J1.4","inf"],["OBC","J2.4","ext"],["OBC","U1.11"]],
+      note: "<strong>Inferred mating.</strong> Copper is extracted on both boards. The connection between them waits for a bench reading." },
+    "GND": { segs: [["ext", line([[150,150],[150,130],[262,130]])], ["inf", line([[262,130],[378,130]])], ["ext", line([[378,130],[602,130],[602,150]])], ["ext", line([[495,130],[495,140]])], ["dec", harness(150,150)], ["ext", line([[768,150],[812,150],[812,128]])]],
+      hops: [["EPS","U2.1","ext"],["EPS","J1.1","inf"],["OBC","J2.1","ext"],["OBC","J3.5","dec"],["DAQ","J1.5","ext"],["DAQ","GND"]],
+      note: "<strong>Ground across three boards.</strong> Extracted copper, one inferred stack mating and one declared harness wire." },
+    "EPS J1.5": { segs: [["unk", ""]],
+      hops: [["EPS","J1.5","unk"],["OBC","J2.5"]],
+      note: "<strong>Unknown.</strong> No source says what EPS J1.5 meets on the OBC. silkscreen draws a gap with a question mark, never an open circuit." },
+    "SW_3V3": { conflict: true, segs: [["ext", line([[540,195],[602,195]])], ["dec", harness(195,240)], ["ext", line([[768,240],[840,240]])]],
+      hops: [["OBC","U1.21","ext"],["OBC","J3.1","dec!"],["DAQ","J1.3","ext"],["DAQ","GND"]],
+      note: "<strong>Conflict.</strong> The wire list lands W1-01 on DAQ J1.1, but the assembly lands it on J1.3, which the DAQ ICD calls GND. The switched 3V3 rail would short to ground at power-on." },
+    "DAQ_CS_N": { conflict: true, segs: [["ext", line([[540,240],[602,240]])], ["dec", harness(240,195)], ["ext", line([[768,195],[840,195]])]],
+      hops: [["OBC","U1.22","ext"],["OBC","J3.3","dec!"],["DAQ","J1.1","ext"],["DAQ","U2.8 VDD"]],
+      note: "<strong>Conflict.</strong> The other half of the crossed pair. W1-03 lands on DAQ J1.1, which the DAQ ICD calls SW_3V3." },
+    "DAQ_EN": { segs: [["ext", line([[540,285],[602,285]])], ["dec", harness(285,285)], ["ext", line([[768,285],[840,285]])]],
+      hops: [["OBC","U1.23","ext"],["OBC","J3.6","dec"],["DAQ","J1.6","ext"],["DAQ","U2.2"]],
+      note: "<strong>Declared harness wire.</strong> The OBC ICD, the wire list and the DAQ ICD all agree. It still needs a bench check." }
+  };
+
+  // pads: [x, y, net]
+  const PADS = [
+    [262,130,"GND"],[262,175,"+5V_OBC"],[262,220,"+3V3_OBC"],[262,265,"EPS_EN"],[262,310,"EPS J1.5"],
+    [378,130,"GND"],[378,175,"+5V_OBC"],[378,220,"+3V3_OBC"],[378,265,"EPS_EN"],[378,310,"EPS J1.5"],
+    [602,150,"GND"],[602,195,"SW_3V3"],[602,240,"DAQ_CS_N"],[602,285,"DAQ_EN"],
+    [768,150,"GND"],[768,195,"DAQ_CS_N"],[768,240,"SW_3V3"],[768,285,"DAQ_EN"]
+  ];
+  const PINS = [ // component pins, small squares
+    [190,175,"+5V_OBC"],[190,220,"+3V3_OBC"],[190,265,"EPS_EN"],[150,150,"GND"],
+    [450,175,"+5V_OBC"],[450,220,"+3V3_OBC"],[450,265,"EPS_EN"],[495,140,"GND"],
+    [540,195,"SW_3V3"],[540,240,"DAQ_CS_N"],[540,285,"DAQ_EN"],
+    [840,195,"DAQ_CS_N"],[840,240,"SW_3V3"],[840,285,"DAQ_EN"]
+  ];
+
+  const svg = document.getElementById("board");
+  const text = (x, y, s, attrs = {}) => { const t = el("text", Object.assign({ x, y, fill: C.silk, "font-family": "IBM Plex Mono, monospace", "font-size": 15 }, attrs), svg); t.textContent = s; return t; };
+
+  // boards
+  el("rect", { x: 40, y: 60, width: 250, height: 320, rx: 14, fill: C.board, stroke: C.edge, "stroke-width": 2 }, svg);
+  el("rect", { x: 350, y: 60, width: 280, height: 320, rx: 14, fill: C.board, stroke: C.edge, "stroke-width": 2 }, svg);
+  el("rect", { x: 740, y: 96, width: 220, height: 244, rx: 14, fill: C.board, stroke: C.edge, "stroke-width": 2 }, svg);
+  text(62, 362, "EPS", { "font-size": 17 }); text(372, 362, "OBC", { "font-size": 17 }); text(762, 126, "DAQ", { "font-size": 17 });
+  text(246, 104, "J1", { "font-size": 13 }); text(366, 104, "J2", { "font-size": 13 }); text(590, 124, "J3", { "font-size": 13 }); text(756, 318, "J1", { "font-size": 13 });
+  // component outlines in silkscreen
+  el("rect", { x: 110, y: 150, width: 80, height: 130, rx: 4, fill: "none", stroke: C.silk, "stroke-width": 2 }, svg);
+  el("circle", { cx: 124, cy: 164, r: 4, fill: C.silk }, svg); text(126, 300, "U2", { "font-size": 13 });
+  el("rect", { x: 450, y: 140, width: 90, height: 165, rx: 4, fill: "none", stroke: C.silk, "stroke-width": 2 }, svg);
+  el("circle", { cx: 464, cy: 154, r: 4, fill: C.silk }, svg); text(480, 326, "U1", { "font-size": 13 });
+  el("rect", { x: 840, y: 165, width: 80, height: 140, rx: 4, fill: "none", stroke: C.silk, "stroke-width": 2 }, svg);
+  el("circle", { cx: 854, cy: 179, r: 4, fill: C.silk }, svg); text(866, 326, "U2", { "font-size": 13 });
+  text(642, 318, "HARNESS W1", { "font-size": 13 });
+
+  const base = el("g", {}, svg), top = el("g", {}, svg), marks = el("g", {}, svg), padG = el("g", {}, svg);
+  const drawSeg = (g, tier, d, color) => {
+    if (tier === "unk") return;
+    const t = TIER[tier];
+    const a = { d, fill: "none", stroke: color, "stroke-width": t.w, "stroke-linecap": "round", "stroke-linejoin": "round" };
+    if (t.dash) a["stroke-dasharray"] = t.dash;
+    el("path", a, g);
+  };
+  for (const n in NETS) for (const [tier, d] of NETS[n].segs) drawSeg(base, tier, d, C.edge);
+  // unknown gap
+  text(312, 315, "?", { "font-size": 22, fill: C.warn, "font-weight": 500 });
+  // conflict marker on the crossing
+  const tri = el("g", { transform: "translate(685 217)" }, marks);
+  el("path", { d: "M0 -13 L12 9 L-12 9 Z", fill: C.warn }, tri);
+  el("rect", { x: -1.5, y: -5, width: 3, height: 8, fill: C.board }, tri);
+  el("rect", { x: -1.5, y: 5, width: 3, height: 2.5, fill: C.board }, tri);
+  // measured tick
+  const tick = el("path", { d: "M312 160 l5 5 l9 -11", fill: "none", stroke: C.hl, "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }, marks);
+
+  const padEls = [];
+  for (const [x, y, net] of PADS) {
+    const c = el("circle", { cx: x, cy: y, r: 11, fill: C.board, stroke: C.pad, "stroke-width": 4, tabindex: -1, style: "cursor:pointer" }, padG);
+    c.dataset.net = net; padEls.push(c);
+    el("circle", { cx: x, cy: y, r: 22, fill: "transparent", style: "cursor:pointer" }, padG).dataset.net = net;
+  }
+  for (const [x, y, net] of PINS) {
+    const r = el("rect", { x: x - 6, y: y - 6, width: 12, height: 12, rx: 2, fill: C.pad, style: "cursor:pointer" }, padG);
+    r.dataset.net = net;
+  }
+
+  const netsEl = document.getElementById("nets"), strip = document.getElementById("strip"), note = document.getElementById("note");
+  const btns = {};
+  for (const n in NETS) {
+    const b = document.createElement("button"); b.textContent = n; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => select(n)); b.addEventListener("mouseenter", () => select(n));
+    netsEl.appendChild(b); btns[n] = b;
+  }
+  // a hop strip like the app's trace dock: board above pin, the line between carries the evidence tier
+  const glyph = tier => {
+    const conflict = tier.endsWith("!"); tier = tier.replace("!", "");
+    const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 46 14"); s.setAttribute("aria-label", TIER[tier].name + (conflict ? ", conflict" : ""));
+    if (tier === "unk") { const t = el("text", { x: 18, y: 12, fill: C.warn, "font-size": 14, "font-family": "IBM Plex Mono, monospace" }, s); t.textContent = "?"; return s; }
+    const a = { d: "M3 7 L43 7", stroke: C.hl, "stroke-width": tier === "meas" ? 5 : 2.5, "stroke-linecap": "round", fill: "none" };
+    if (TIER[tier].dash) a["stroke-dasharray"] = tier === "inf" ? "0.5 5" : "6 4";
+    el("path", a, s);
+    if (conflict) el("path", { d: "M23 0 L30 13 L16 13 Z", fill: C.warn }, s);
+    return s;
+  };
+  function dock(target, hops) {
+    target.replaceChildren();
+    hops.forEach(([board, pin, tier], k) => {
+      const h = document.createElement("span"); h.className = "hop" + (k === 0 ? " first" : "");
+      const sm = document.createElement("small"); sm.textContent = board; const b = document.createElement("b"); b.textContent = pin;
+      h.append(sm, b); target.appendChild(h);
+      if (tier) target.appendChild(glyph(tier));
+    });
+  }
+  let current = null;
+  function select(n) {
+    if (n === current) return; current = n;
+    for (const k in btns) btns[k].setAttribute("aria-pressed", String(k === n));
+    top.replaceChildren();
+    for (const [tier, d] of NETS[n].segs) drawSeg(top, tier, d, C.hl);
+    for (const c of padEls) c.setAttribute("fill", c.dataset.net === n ? C.pad : C.board);
+    tick.setAttribute("stroke", n === "+5V_OBC" ? C.hl : C.edge);
+    dock(strip, NETS[n].hops);
+    note.innerHTML = NETS[n].note;
+  }
+  padG.addEventListener("mouseover", e => { const n = e.target.dataset && e.target.dataset.net; if (n) select(n); });
+  padG.addEventListener("click", e => { const n = e.target.dataset && e.target.dataset.net; if (n) select(n); });
+  select("SW_3V3");
+
+  /* legend */
+  const legend = document.getElementById("legend");
+  const LEG = [
+    ["ext", "Extracted", "From board copper or a KiCad netlist."],
+    ["dec", "Declared", "From an ICD, a pinout sheet or a harness drawing."],
+    ["inf", "Inferred", "From stack order, footprint position or an agent's reasoning."],
+    ["meas", "Measured", "Confirmed with a meter at the bench."],
+    ["unk", "Unknown", "No source says. It stays a gap until one does."],
+    ["conf", "Conflict", "Two sources disagree. It links straight to its review item."]
+  ];
+  for (const [k, h, p] of LEG) {
+    const d = document.createElement("div");
+    const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 220 28"); s.setAttribute("aria-hidden", "true");
+    if (k === "unk") { el("path", { d: "M4 14 L80 14 M140 14 L216 14", stroke: "#14301f", "stroke-width": 3, "stroke-linecap": "round" }, s); const t = el("text", { x: 104, y: 22, "font-size": 22, fill: "#14301f", "font-family": "IBM Plex Mono, monospace" }, s); t.textContent = "?"; }
+    else if (k === "conf") { el("path", { d: "M4 14 L216 14", stroke: "#14301f", "stroke-width": 3, "stroke-dasharray": "9 6", "stroke-linecap": "round" }, s); el("path", { d: "M110 1 L124 26 L96 26 Z", fill: "#efb56b" }, s); el("rect", { x: 108.5, y: 9, width: 3, height: 9, fill: "#14301f" }, s); el("rect", { x: 108.5, y: 20, width: 3, height: 3, fill: "#14301f" }, s); }
+    else { const t = TIER[k]; const a = { d: "M4 14 L216 14", stroke: "#14301f", "stroke-width": t.w, "stroke-linecap": "round", fill: "none" }; if (t.dash) a["stroke-dasharray"] = t.dash; el("path", a, s); }
+    d.appendChild(s);
+    const hh = document.createElement("h3"); hh.textContent = h; d.appendChild(hh);
+    const pp = document.createElement("p"); pp.textContent = p; d.appendChild(pp);
+    legend.appendChild(d);
+  }
+
+  /* hover menu with preview stage: each pane is a small working copy of an app screen */
+  const stage = document.getElementById("stage"), items = [...document.querySelectorAll(".item")];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const PANES = {
+    import() {
+      const w = document.createElement("div"); w.className = "pane";
+      w.innerHTML = `<div class="pv-h">Home</div>
+        <div class="composer"><span>Describe the boards and harnesses, or drop the files…</span><span class="send">↑</span></div>
+        <div class="btns"><button class="qbtn" data-src="kicad">Import KiCad folder</button><button class="qbtn" data-src="gerber">Drop Gerbers</button><button class="qbtn" data-src="open">Open project</button></div>
+        <div class="rows" id="files"></div>
+        <div class="stats" id="stats"><div><b>0</b><span>Boards</span></div><div><b>0</b><span>Contacts</span></div><div><b>0</b><span>Harness wires</span></div><div><b>0</b><span>Open conflicts</span></div></div>
+        <div class="out" id="iout"></div>`;
+      const FILES = [["eps.kicad_pcb", "KiCad board"], ["obc.kicad_pcb", "KiCad board"], ["daq.kicad_pcb", "KiCad board"], ["loadcell.kicad_pcb", "KiCad board"], ["obc-icd.xlsx", "ICD pinout"], ["harness-w1-rev-a.csv", "Wire list"], ["harness-w2-rev-a.csv", "Wire list"], ["obc-schematic.pdf", "Schematic"]];
+      const target = [4, 302, 16, 6];
+      const run = () => {
+        const list = w.querySelector("#files"), out = w.querySelector("#iout"), bs = [...w.querySelectorAll("#stats b")];
+        list.replaceChildren(); bs.forEach(b => b.textContent = "0"); out.textContent = "";
+        FILES.forEach(([f, k], i) => setTimeout(() => {
+          const r = document.createElement("div"); r.className = "row"; r.innerHTML = `<span class="k">${esc(f)}</span><span class="v">${esc(k)}</span>`; list.appendChild(r);
+          if (i === FILES.length - 1) {
+            const t0 = performance.now();
+            const step = now => { const k2 = Math.min(1, (now - t0) / 900); bs.forEach((b, j) => b.textContent = Math.round(target[j] * k2)); if (k2 < 1) requestAnimationFrame(step); else out.textContent = "Created Testbench demo: LoadCell, OBC, EPS and DAQ on 2 harnesses."; };
+            requestAnimationFrame(step);
+          }
+        }, i * 110));
+      };
+      w.querySelectorAll("[data-src]").forEach(b => b.addEventListener("click", run));
+      return w;
+    },
+    assembly() {
+      const w = document.createElement("div"); w.className = "pane";
+      w.innerHTML = `<div class="pv-h">Assembly · 4 boards · 1 mating · 16 wires</div>
+        <svg class="iso" viewBox="0 0 620 270" aria-label="Exploded stack of EPS and OBC, with DAQ and LoadCell on harnesses"></svg>
+        <div class="netpick"><button data-n="DAQ_3V3" aria-pressed="true">DAQ_3V3</button><button data-n="OUT_P" aria-pressed="false">OUT_P</button></div>
+        <div class="dock" id="adock"></div>
+        <div class="out" id="aout"></div>`;
+      const s = w.querySelector(".iso");
+      const iso = (o, u, v) => [o[0] + u * 0.92 - v * 0.62, o[1] + u * 0.26 + v * 0.4];
+      const B = { EPS: { o: [70, 120], w: 170, h: 110 }, OBC: { o: [70, 86], w: 170, h: 110 }, DAQ: { o: [300, 104], w: 150, h: 92 }, LoadCell: { o: [500, 94], w: 80, h: 56 } };
+      const P = (b, u, v) => iso(B[b].o, u, v);
+      for (const name of ["EPS", "OBC", "DAQ", "LoadCell"]) {
+        const b = B[name]; const pts = [iso(b.o, 0, 0), iso(b.o, b.w, 0), iso(b.o, b.w, b.h), iso(b.o, 0, b.h)];
+        el("polygon", { points: pts.map(p => p.join(",")).join(" "), fill: C.board, stroke: C.edge, "stroke-width": 1.5 }, s);
+        for (let i = 0; i < 6; i++) { const a = iso(b.o, b.w * 0.12, b.h * (0.2 + i * 0.12)), c = iso(b.o, b.w * 0.55, b.h * (0.2 + i * 0.12)); el("path", { d: `M${a} L${c}`, stroke: C.edge, "stroke-width": 1 }, s); }
+        const lp = iso(b.o, 0, 0); const t = el("text", { x: lp[0] - 30, y: lp[1] - 8, fill: C.silk, "font-size": 13, "font-family": "IBM Plex Sans, sans-serif", "font-weight": 600 }, s); t.textContent = name;
+      }
+      const NETS2 = {
+        DAQ_3V3: { segs: [["dec", P("OBC", 160, 40), P("DAQ", 10, 30)], ["ext", P("DAQ", 10, 30), P("DAQ", 120, 60)], ["dec", P("DAQ", 120, 60), P("LoadCell", 8, 20)]],
+          hops: [["OBC", "J3.1", "dec"], ["DAQ", "J1.3", "ext"], ["DAQ", "U2.2", "ext"], ["DAQ", "J1.9", "dec"], ["LoadCell", "J1.1", "ext"], ["LoadCell", "U1.1"]],
+          note: "45 contacts on 4 boards. Every hop carries the source it came from." },
+        OUT_P: { conflict: true, segs: [["ext", P("LoadCell", 60, 40), P("LoadCell", 10, 40)], ["dec", P("LoadCell", 10, 40), P("DAQ", 130, 78)], ["ext", P("DAQ", 130, 78), P("DAQ", 70, 70)]],
+          hops: [["LoadCell", "U1.4", "ext"], ["LoadCell", "J1.4", "dec!"], ["DAQ", "J2.3", "ext"], ["DAQ", "U1.4 AIN_N"]],
+          note: "Harness W2 swaps the bridge output onto the ADC's negative input, so the load cell reads negative." }
+      };
+      const g = el("g", {}, s);
+      const draw = n => {
+        g.replaceChildren();
+        for (const [t, a, b] of NETS2[n].segs) {
+          const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) + (t === "dec" ? 30 : 0)];
+          const d = t === "dec" ? `M${a} Q${mid} ${b}` : `M${a} L${b}`;
+          const at = { d, fill: "none", stroke: C.hl, "stroke-width": 2.5, "stroke-linecap": "round" }; if (t === "dec") at["stroke-dasharray"] = "7 5";
+          el("path", at, g);
+        }
+        dock(w.querySelector("#adock"), NETS2[n].hops); w.querySelector("#aout").textContent = NETS2[n].note;
+        w.querySelectorAll("[data-n]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.n === n)));
+      };
+      w.querySelectorAll("[data-n]").forEach(b => { b.addEventListener("click", () => draw(b.dataset.n)); b.addEventListener("mouseenter", () => draw(b.dataset.n)); });
+      draw("DAQ_3V3");
+      return w;
+    },
+    explore() {
+      const w = document.createElement("div"); w.className = "pane";
+      const QA = [
+        ["Where does OBC J3.1 go?", "trace, files.read",
+         "OBC J3.1 carries <span class=\"mono\">DAQ_3V3</span>. It leaves on harness W1 as W1-01, declared in <span class=\"mono\">harness-w1-rev-a.csv</span> row 2, then lands on <span class=\"mono\">DAQ J1.3</span> and runs on to <span class=\"mono\">LoadCell U1.1</span>. That's 45 contacts across 4 boards."],
+        ["Is anything on this net unverified?", "trace, evidence.read",
+         "Two hops. The W1 wire is only declared by the wire list, and the EPS to OBC mating is inferred from stack order. Copper on all four boards is extracted. A continuity check from <span class=\"mono\">OBC J3.1</span> to <span class=\"mono\">DAQ J1.3</span> would settle the harness."],
+        ["Why does Review flag W1-01?", "review.conflicts, files.read",
+         "The wire list lands W1-01 on <span class=\"mono\">DAQ J1.1</span>, but the assembly lands it on <span class=\"mono\">J1.3</span>. The DAQ ICD calls J1.3 ground, so the switched 3V3 rail would short at power-on. W1-02 to W1-04 are crossed the same way."]
+      ];
+      w.innerHTML = `<div class="pv-h">Explore · OBC J3.1 selected</div>
+        <div class="ask"><span class="chip">OBC J3.1</span><span class="hint">Ask about the selection…</span></div>
+        <div class="sugg" id="sugg"></div>
+        <div class="conv" id="conv" aria-live="polite"></div>`;
+      const sugg = w.querySelector("#sugg"), conv = w.querySelector("#conv");
+      let timer = 0;
+      const ask = k => {
+        clearTimeout(timer);
+        sugg.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", String(j === k)));
+        const [q, tools, a] = QA[k];
+        conv.innerHTML = `<div class="msg me"></div><div class="tools">▸ thinking…</div>`;
+        conv.firstChild.textContent = q;
+        timer = setTimeout(() => {
+          conv.querySelector(".tools").textContent = `▸ tool calls: ${tools}`;
+          conv.insertAdjacentHTML("beforeend", `<div class="msg">${a}</div>`);
+        }, 550);
+      };
+      QA.forEach(([q], k) => { const b = document.createElement("button"); b.textContent = q; b.addEventListener("click", () => ask(k)); sugg.appendChild(b); });
+      ask(0);
+      return w;
+    },
+    review() {
+      const w = document.createElement("div"); w.className = "pane";
+      const C6 = [
+        ["W1-01", "DAQ J1.1 vs J1.3", "wire", 2, "J1.1", "J1.3"], ["W1-02", "DAQ J1.2 vs J1.4", "wire", 3, "J1.2", "J1.4"],
+        ["W1-03", "DAQ J1.3 vs J1.1", "wire", 4, "J1.3", "J1.1"], ["W1-04", "DAQ J1.4 vs J1.2", "wire", 5, "J1.4", "J1.2"],
+        ["OBC J3.7", "DAQ_CS_N vs DAQ_MOSI", "icd", "C19", "DAQ_CS_N", "DAQ_MOSI"], ["OBC J3.8", "DAQ_MOSI vs DAQ_CS_N", "icd", "C20", "DAQ_MOSI", "DAQ_CS_N"]
+      ];
+      const done = {}; const hist = []; let i = 0;
+      w.innerHTML = `<div class="pv-h">Review · <span id="open">6</span> open</div><div class="rv"><div class="rv-list" id="rl"></div><div class="rv-detail" id="rd"></div></div>
+        <div class="btns"><button class="qbtn" data-d="1">Wire list is correct <kbd>1</kbd></button><button class="qbtn" data-d="2">Assembly is correct <kbd>2</kbd></button><button class="qbtn" data-d="b">Measure at bench <kbd>B</kbd></button></div>
+        <div class="keys" style="margin-top:12px">J / K next · Z undo</div>`;
+      const list = w.querySelector("#rl"), det = w.querySelector("#rd");
+      const render = () => {
+        list.innerHTML = C6.map((c, k) => `<button data-i="${k}" class="${k === i ? "on" : ""}${done[k] ? " done" : ""}"><span class="tri">${done[k] ? "✓" : "▲"}</span><span class="mono">${c[0]}</span> <span class="sub">${c[1]}</span></button>`).join("");
+        w.querySelector("#open").textContent = C6.length - Object.keys(done).length;
+        const c = C6[i];
+        if (c[2] === "wire") {
+          const rows = [["W1-01", "J3.1", "J1.1"], ["W1-02", "J3.2", "J1.2"], ["W1-03", "J3.3", "J1.3"], ["W1-04", "J3.4", "J1.4"]];
+          det.innerHTML = `<h4><span class="mono">${c[0]}</span> lands on a different pin than the wire list</h4>
+            <div class="vs"><div><div class="lab">Wire list says</div><div class="big mono">DAQ ${c[4]}</div><div class="sub">harness-w1-rev-a.csv · row ${c[3]}</div></div>
+              <div><div class="lab">Assembly says</div><div class="big mono">DAQ ${c[5]}</div><div class="sub">Extracted from daq.kicad_pcb</div></div></div>
+              <table class="sheet"><tr><th>wire</th><th>from</th><th>to</th></tr>${rows.map((r, k) => `<tr class="${k + 2 === c[3] ? "hot" : ""}"><td>${r[0]}</td><td>OBC ${r[1]}</td><td>DAQ ${r[2]}</td></tr>`).join("")}</table>`;
+        } else {
+          det.innerHTML = `<h4><span class="mono">${c[0]}</span>: the ICD differs from copper</h4>
+            <div class="vs"><div><div class="lab">ICD says <span class="mono">obc-icd.xlsx · Pinout!${c[3]}</span></div><div class="big mono">${c[4]}</div><div class="sub">Declared, rev 1.3</div></div>
+              <div><div class="lab">Copper says</div><div class="big mono">${c[5]}</div><div class="sub">Extracted, and the schematic agrees</div></div></div>`;
+        }
+        const qb = w.querySelectorAll("[data-d]");
+        qb[0].innerHTML = (c[2] === "wire" ? "Wire list is correct" : "ICD is correct") + " <kbd>1</kbd>";
+        qb[1].innerHTML = (c[2] === "wire" ? "Assembly is correct" : "Copper is correct") + " <kbd>2</kbd>";
+        if (done[i]) det.insertAdjacentHTML("beforeend", `<div class="out">Decided: ${done[i]}. Press Z to undo.</div>`);
+      };
+      const decide = d => {
+        const label = { "1": C6[i][2] === "wire" ? "wire list is correct" : "ICD is correct", "2": C6[i][2] === "wire" ? "assembly is correct" : "copper is correct", b: "measure at bench" }[d];
+        done[i] = label; hist.push(i); render();
+      };
+      list.addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) { i = +b.dataset.i; render(); } });
+      w.querySelectorAll("[data-d]").forEach(b => b.addEventListener("click", () => decide(b.dataset.d)));
+      w.tabIndex = 0;
+      w.addEventListener("keydown", e => {
+        const k = e.key.toLowerCase();
+        if (k === "j") i = Math.min(C6.length - 1, i + 1); else if (k === "k") i = Math.max(0, i - 1);
+        else if (k === "1" || k === "2" || k === "b") return decide(k);
+        else if (k === "z" && hist.length) { const j = hist.pop(); delete done[j]; i = j; } else return;
+        e.preventDefault(); render();
+      });
+      render();
+      return w;
+    },
+    bench() {
+      const w = document.createElement("div"); w.className = "pane";
+      const checks = [["EPS J1.2 → OBC J2.2", "Continuity, expect under 1 Ω", 1], ["EPS J1.3 → OBC J2.3", "Continuity, expect under 1 Ω", 1], ["OBC J3.1 → DAQ J1.1", "Continuity, expect under 1 Ω", 1], ["SW_3V3 → GND", "Isolation, expect over 1 MΩ", 0]];
+      let i = 0;
+      w.innerHTML = `<div class="pv-h">Bench · check <span id="n">1</span> of ${checks.length}</div>
+        <div class="check" id="c"></div><div class="expect" id="e"></div>
+        <div class="entry"><input id="val" inputmode="decimal" aria-label="Reading" autocomplete="off"><label for="val" id="unit">Ω</label><button class="sbtn" id="rec">Record</button></div>
+        <div class="keys" style="margin-top:12px">Enter records · O open · S skip</div>
+        <div class="rows hist" id="h"><div class="row"><span class="k">EPS J1.1 → OBC J2.1</span><span class="v">0.1 Ω  pass</span></div></div>`;
+      const c = w.querySelector("#c"), e = w.querySelector("#e"), v = w.querySelector("#val"), h = w.querySelector("#h"), n = w.querySelector("#n"), unit = w.querySelector("#unit");
+      const show = () => { if (i >= checks.length) { c.textContent = "All checks done"; e.textContent = "Readings are saved as measured evidence. Agents can propose checks, but only you record readings."; w.querySelector(".entry").hidden = true; w.querySelector(".keys").hidden = true; return; }
+        c.textContent = checks[i][0]; e.textContent = checks[i][1]; unit.textContent = checks[i][2] ? "Ω" : "MΩ"; n.textContent = i + 1; v.value = ""; };
+      const record = raw => { if (i >= checks.length) return;
+        let res;
+        if (raw === "skip") res = "skipped";
+        else if (raw === "open") res = checks[i][2] ? "open  anomaly opened" : "open  pass";
+        else { const x = parseFloat(raw); if (isNaN(x)) return; res = checks[i][2] ? (x < 1 ? `${x} Ω  pass` : `${x} Ω  anomaly opened`) : (x > 1 ? `${x} MΩ  pass` : `${x} MΩ  anomaly opened`); }
+        const r = document.createElement("div"); r.className = "row"; r.innerHTML = `<span class="k"></span><span class="v"></span>`;
+        r.firstChild.textContent = checks[i][0]; r.lastChild.textContent = res; h.prepend(r); i++; show(); v.focus({ preventScroll: true }); };
+      v.addEventListener("keydown", ev => {
+        if (ev.key === "Enter") { ev.preventDefault(); record(v.value); }
+        else if (ev.key === "o" || ev.key === "O") { ev.preventDefault(); record("open"); }
+        else if (ev.key === "s" || ev.key === "S") { ev.preventDefault(); record("skip"); }
+      });
+      w.querySelector("#rec").addEventListener("click", () => record(v.value));
+      show(); return w;
+    },
+    export() {
+      const w = document.createElement("div"); w.className = "pane";
+      const EX = {
+        "Wire list CSV": ["wire,from_board,from,to_board,to,signal,tier", "W1-01,OBC,J3.1,DAQ,J1.3,DAQ_3V3,declared", "W1-02,OBC,J3.2,DAQ,J1.4,DAQ_GND,declared", "W1-03,OBC,J3.3,DAQ,J1.1,SW_3V3,declared", "W1-04,OBC,J3.4,DAQ,J1.2,DAQ_GND,declared"],
+        "IPC-D-356": ["P  JOB   testbench-w1 OBC", "P  UNITS CUST 0", "317DAQ_3V3          J3    -1     PA00X+012700Y+004500", "317DAQ_GND          J3    -2     PA00X+012700Y+006040", "317SW_3V3           J3    -3     PA00X+012700Y+007580"],
+        "Check report": ["check,kind,expected,reading,result,by,instrument", "EPS J1.2 > OBC J2.2,continuity,<1 ohm,0.2 ohm,pass,owner,Fluke 87V", "OBC J3.1 > DAQ J1.1,continuity,<1 ohm,open,anomaly A-01,owner,Fluke 87V", "SW_3V3 > GND,isolation,>1 Mohm,0.4 ohm,anomaly A-02,owner,Fluke 87V"],
+        "As-built JSON": ["{", '  "project": "testbench",', '  "boards": ["EPS", "OBC", "DAQ", "LoadCell"],', '  "harnesses": ["W1", "W2"],', '  "contacts": 302,', '  "evidence": { "extracted": 286, "declared": 16, "measured": 3 }', "}"],
+        "SysML v2": ["part def OBC { port J3 : HarnessConnector; }", "part def DAQ { port J1 : HarnessConnector; }", "part testbench {", "  connect obc.J3.p1 to daq.J1.p3;  // W1-01", "  connect obc.J3.p2 to daq.J1.p4;  // W1-02", "}"]
+      };
+      w.innerHTML = `<div class="pv-h">Hand off</div><div class="netpick" id="ex"></div><pre class="code" id="code"></pre>
+        <div class="out">Each export comes with an evidence manifest: the sources, revisions and evidence tier behind every line.</div>`;
+      const pick = w.querySelector("#ex"), code = w.querySelector("#code");
+      const show = k => { code.textContent = EX[k].join("\n"); pick.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.textContent === k))); };
+      for (const k in EX) { const b = document.createElement("button"); b.textContent = k; b.addEventListener("click", () => show(k)); b.addEventListener("mouseenter", () => show(k)); pick.appendChild(b); }
+      show("Wire list CSV");
+      return w;
+    }
+  };
+  let active = null;
+  const narrow = matchMedia("(max-width: 860px)");
+  function activate(k, fromClick) {
+    const it = items.find(x => x.dataset.k === k);
+    if (narrow.matches) it.after(stage); else document.querySelector(".flow").appendChild(stage);
+    if (k === active) return;
+    active = k;
+    items.forEach(x => { x.classList.toggle("on", x === it); x.setAttribute("aria-expanded", String(x === it)); });
+    stage.replaceChildren(PANES[k]());
+  }
+  items.forEach(it => {
+    it.setAttribute("aria-controls", "stage");
+    it.addEventListener("mouseenter", () => { if (!narrow.matches) activate(it.dataset.k); });
+    it.addEventListener("focus", () => activate(it.dataset.k));
+    it.addEventListener("click", () => activate(it.dataset.k, true));
+  });
+  narrow.addEventListener("change", () => { const k = active; active = null; activate(k); });
+  activate("import");
+
+
+  /* hero traces: redrawn to fit the window, with a mint segment on the trace nearest the pointer */
+  {
+    const hero = document.querySelector(".hero"), svg = document.getElementById("traces"), row = document.getElementById("dlrow");
+    let samples = [], glows = [], lens = [];
+    const hover = matchMedia("(hover: hover)").matches;
+    // Two traces leave each side of the download buttons and run off the edges of the window.
+    function draw() {
+      const H = hero.getBoundingClientRect(), W = H.width;
+      const A = row.getBoundingClientRect();
+      const cy = A.top - H.top + A.height / 2, lx = A.left - H.left, rx = A.right - H.left;
+      const paths = [], rings = [];
+      const side = (x0, dir) => {
+        const room = dir > 0 ? W - x0 : x0;
+        if (room < 200) return;
+        const v1 = x0 + dir * 32, v2 = x0 + dir * 72, g = 30;
+        const run1 = Math.min(150, room * .3), run2 = Math.min(120, room * .25);
+        paths.push(`M${v1 + dir * 9} ${cy} H${v1 + dir * run1} l${dir * 44} -44 H${dir > 0 ? W + 20 : -20}`); rings.push([v1, cy]);
+        const x2 = (dir > 0 ? Math.max : Math.min)(v2 + dir * run2, v1 + dir * (run1 + 60)); paths.push(`M${v2 + dir * 9} ${cy + g} H${x2} l${dir * 44} -44 H${dir > 0 ? W + 20 : -20}`); rings.push([v2, cy + g]);
+      };
+      side(rx, 1); side(lx, -1);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H.height}`);
+      svg.innerHTML = paths.map(d => `<path d="${d}"/>`).join("") + rings.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="7"/>`).join("") + paths.map(d => `<path class="glow" d="${d}"/>`).join("");
+      glows = [...svg.querySelectorAll(".glow")];
+      samples = glows.map(p => { const pts = []; const len = p.getTotalLength(); for (let d = 0; d <= len; d += 6) { const q = p.getPointAtLength(d); pts.push([q.x, q.y, d]); } return pts; });
+      lens = glows.map(g => g.getTotalLength());
+      if (seg >= order().length) seg = 0;
+    }
+    function light(i, at) { glows.forEach((g, k) => { g.style.opacity = k === i ? "" : "0"; if (k === i) g.style.strokeDashoffset = String(17 - at); }); }
+    let frame = 0;
+    if (hover) hero.addEventListener("pointermove", e => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const H = hero.getBoundingClientRect(), x = e.clientX - H.left, y = e.clientY - H.top;
+        let best = { i: -1, at: 0, d: 160 * 160 };
+        samples.forEach((pts, i) => { for (const [qx, qy, at] of pts) { const d = (qx - x) ** 2 + (qy - y) ** 2; if (d < best.d) best = { i, at, d }; } });
+        if (best.i >= 0) { svg.classList.remove("auto"); light(best.i, best.at); user = { i: best.i, at: best.at }; idleAt = performance.now() + 1200; }
+      });
+    });
+
+    /* when nobody is steering it, the pulse runs in along a lower trace, jumps out of the upper trace's via, leaves the edge and comes back in on the other side */
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    const order = () => glows.length >= 4 ? [[1, -1], [0, 1], [3, -1], [2, 1]] : [[1, -1], [0, 1]];
+    let seg = 0, at = null, user = null, idleAt = 0, last = 0, wait = 0, seen = true, raf = 0;
+    const SPEED = 240, PAD = 20;
+    function tick(t) {
+      raf = requestAnimationFrame(tick);
+      const dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+      if (!glows.length || t < idleAt || still.matches || !seen || !svg.getClientRects().length) return;
+      const seq = order();
+      if (user) { const k = seq.findIndex(([i]) => i === user.i); if (k >= 0) { seg = k; at = user.at; } user = null; }
+      let [i, dir] = seq[seg];
+      const len = lens[i];
+      if (at === null) at = dir < 0 ? len + PAD : -PAD;
+      if (wait > 0) { wait -= dt; return; }
+      at += dir * SPEED * dt;
+      if (dir < 0 ? at <= -PAD : at >= len + PAD) { seg = (seg + 1) % seq.length; [i, dir] = seq[seg]; at = dir < 0 ? lens[i] + PAD : -PAD; wait = dir > 0 ? .12 : .35; }
+      svg.classList.add("auto"); light(i, at);
+    }
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; }).observe(hero);
+    raf = requestAnimationFrame(tick);
+    new ResizeObserver(() => draw()).observe(hero);
+    document.fonts && document.fonts.ready.then(draw);
+  }
+
+  /* theme: follows the system until the visitor picks one */
+  {
+    const root = document.documentElement, btn = document.getElementById("theme");
+    let saved = null; try { saved = localStorage.getItem("theme"); } catch (e) {}
+    if (saved === "dark" || saved === "light") root.dataset.theme = saved;
+    const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const label = () => btn.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode");
+    label();
+    btn.addEventListener("click", () => { const next = isDark() ? "light" : "dark"; root.dataset.theme = next; try { localStorage.setItem("theme", next); } catch (e) {} label(); });
+  }
+
+  /* download buttons name the visitor's platform */
+  {
+    const ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent;
+    const os = /win/i.test(ua) ? ["win", "Windows"] : /linux|x11|cros/i.test(ua) && !/android/i.test(navigator.userAgent) ? ["linux", "Linux"] : ["mac", "macOS"];
+    const ICON = {"mac": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701\"/></svg>", "win": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M2 3.5 10.5 2.3v8.9H2zM11.6 2.1 22 .7v10.5H11.6zM2 12.3h8.5v8.9L2 20zM11.6 12.3H22v10.5l-10.4-1.4z\"/></svg>", "linux": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z\"/></svg>"};
+    document.querySelectorAll(".dl-main").forEach(a => { a.innerHTML = ICON[os[0]] + `<span>Download for ${os[1]}</span>`; a.href = `install.html#${os[0]}`; });
+  }
+
+  /* proposal, and the agent mode switch */
+  const prop = document.getElementById("proposal");
+  const propHTML = prop.innerHTML;
+  document.querySelector(".mode").addEventListener("click", e => {
+    const m = e.target.dataset && e.target.dataset.m; if (!m) return;
+    e.currentTarget.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.target)));
+    prop.innerHTML = m === "auto"
+      ? `<div><strong>Rewired W1-01 to W1-04 to match the wire list</strong></div><div class="sub">Applied in Auto mode · logged in Activity · 4 checks added to the bench</div>`
+      : propHTML;
+  });
+  prop.addEventListener("click", e => {
+    const a = e.target.dataset && e.target.dataset.a; if (!a) return;
+    prop.querySelector(".btns").replaceChildren(Object.assign(document.createElement("span"), { textContent: a === "accept" ? "Accepted. W1 rewired, 4 checks added to the bench list." : "Rejected. Harness W1 unchanged." , style: "font-size:15px;font-weight:600" }));
+  });
+
+  /* bar hides on scroll down, returns on scroll up */
+  const bar = document.getElementById("bar"); let lastY = scrollY;
+  addEventListener("scroll", () => { const y = scrollY; bar.classList.toggle("away", y > lastY && y > 120); lastY = y; }, { passive: true });
+})();
+</script>
+
+</body>
+</html>
