@@ -21,7 +21,9 @@ This repository holds the website (served by GitHub Pages) and the release build
 
    The Mac build already comes out under this name. The Windows and Linux builds don't yet, so rename those files before you upload them.
 
-3. Publish it. The site links to `releases/latest/download/<file>`, which always points at the newest non-prerelease release. Pre-releases are not picked up by those links.
+3. Update `version` in the `RELEASES` line of `install.html` (for example `"Beta 1.2"`) so the Download page shows the new version.
+
+4. Publish it. The site links to `releases/latest/download/<file>`, which always points at the newest non-prerelease release. Pre-releases are not picked up by those links.
 
 ## Limits
 

@@ -112,7 +112,7 @@ footer a:hover { color: var(--ink); }
 <script>
 (() => {
   // Fill these in when the builds are published. A missing url shows that build as coming soon.
-  const RELEASES = { version: "", all: "https://github.com/sdotvenk/silkscreen-releases/releases" }; // all: the GitHub releases page
+  const RELEASES = { version: "Beta 1.1", all: "https://github.com/sdotvenk/silkscreen-releases/releases" }; // all: the GitHub releases page
   const BUILDS = {
     mac:   { name: "macOS",   main: [{ label: "Apple silicon", kind: ".dmg", url: "https://github.com/sdotvenk/silkscreen-releases/releases/latest/download/silkscreen-mac-arm64.dmg" }], extra: [] },
     win:   { name: "Windows", main: [{ label: "Installer", kind: ".exe", url: "https://github.com/sdotvenk/silkscreen-releases/releases/latest/download/silkscreen-win-x64-setup.exe" }], extra: [{ label: "Portable", kind: ".zip", url: "https://github.com/sdotvenk/silkscreen-releases/releases/latest/download/silkscreen-win-x64-portable.zip" }] },
@@ -142,7 +142,7 @@ footer a:hover { color: var(--ink); }
     <form class="notify" id="notify"><input type="email" required placeholder="you@team.space" aria-label="Email"><button class="btn" type="submit">Sign up</button></form>`;
 
   const sub = document.getElementById("sub");
-  if (RELEASES.version || RELEASES.all) { sub.hidden = false; sub.innerHTML = [RELEASES.version && `Version ${esc(RELEASES.version)}`, RELEASES.all && `<a href="${esc(RELEASES.all)}">All releases on GitHub</a>`].filter(Boolean).join(" · "); }
+  if (RELEASES.version || RELEASES.all) { sub.hidden = false; sub.innerHTML = [RELEASES.version && esc(RELEASES.version), RELEASES.all && `<a href="${esc(RELEASES.all)}">All releases on GitHub</a>`].filter(Boolean).join(" · "); }
 
   const form = document.getElementById("notify");
   if (form) form.addEventListener("submit", e => {
