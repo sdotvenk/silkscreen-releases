@@ -10,6 +10,13 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: ["macOS", "Windows", "Linux"]
+    validations:
+      required: true
+  - type: dropdown
     id: reporter
     attributes:
       label: Found by
