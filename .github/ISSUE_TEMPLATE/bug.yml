@@ -1,0 +1,31 @@
+name: Bug report
+description: Something in silkscreen is wrong
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: silkscreen version
+      placeholder: "1.6.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: reporter
+    attributes:
+      label: Found by
+      options: ["Me", "The in-app agent"]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or agent findings
+      render: text
